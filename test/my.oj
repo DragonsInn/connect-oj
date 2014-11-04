@@ -1,0 +1,13 @@
+var oj = require("./node_modules/ojc/src/runtime.js");
+@implementation MyImpl
++(id)myFunc {
+    console.log("meep!");
+}
+@end
+
+// ovo
+var meep = 20 ;
+
+#include("base.oj");
+
+console.log("See:", MyImpl);

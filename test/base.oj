@@ -1,0 +1,7 @@
+@implementation Base {
+    String meep;
+}
+-(id)DoSomething {}
+@end
+
+#var meepy=100;

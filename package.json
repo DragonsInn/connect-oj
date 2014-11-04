@@ -1,0 +1,36 @@
+{
+  "name": "connect-oj",
+  "version": "1.0.0",
+  "description": "Connect <-> OJ middleware",
+  "main": "main.js",
+  "scripts": {
+    "test": "npm install && node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IngwiePhoenix/connect-oj.git"
+  },
+  "keywords": [
+    "oj",
+    "objective-js",
+    "javascript",
+    "source",
+    "code",
+    "translation",
+    "objective-c",
+    "objective-j"
+  ],
+  "author": "Ingwie Phoenix",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/IngwiePhoenix/connect-oj/issues"
+  },
+  "homepage": "https://github.com/IngwiePhoenix/connect-oj",
+  "dependencies": {
+    "ojc": "git://github.com/musictheory/oj.git#1.0",
+    "temp": "^0.8.1"
+  },
+  "devDependencies": {
+    "connect": "^3.3.2"
+  }
+}

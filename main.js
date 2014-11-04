@@ -2,7 +2,9 @@ var pp = require("./pp"),
     oj = require("ojc"),
     path = require("path"),
     fs = require("fs"),
-    util = require("util");
+    util = require("util"),
+    url = require("url"),
+    qs = require("querystring");
 module.exports = function ConnectOJ(options) {
     var defaultOption = {
         oj: {},
@@ -15,7 +17,20 @@ module.exports = function ConnectOJ(options) {
 
     return function(req, res, next) {
         function oj_cb(err, result) {
+            res.setHeader("Content-type", "text/javascript");
             res.end(result);
+        }
+
+        var _u = url.parse(req.url);
+        var _q = qs.parse(_u.query);
+        if(typeof _q.runtime != "undefined") {
+            // The runtime was requested, get it.
+            var ojm = require.resolve("ojc");
+            var ojr = path.join(path.dirname(ojm), "runtime.js");
+            console.log("-- Serving runtime:", ojr);
+            res.setHeader("Content-type", "text/javascript");
+            res.end(fs.readFileSync(ojr).toString());
+            return; // End it here.
         }
 
         console.log("-- Connect-OJ:", req.url);
@@ -72,6 +87,6 @@ module.exports = function ConnectOJ(options) {
                 var deps = JSON.parse( fs.readFileSync(Dname).toString() );
                 // combine all deps.files[], preprocess and parse them into a nice JS file.
             }
-        } else next();
+        } else return next();
     }
 }

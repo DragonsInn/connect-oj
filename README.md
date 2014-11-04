@@ -4,7 +4,7 @@ So, you are working on a project with some rather long function calls? Then you 
 
     inst.func(myVar, "some text", true, 20, 20, null);
 
-.... Whaaaaaaat? O_o
+.... Whaaaaaaat? 0_o
 
 The solution usually is to use better documentation. But, it could be easier:
 
@@ -21,11 +21,11 @@ No documentation needed. AND you may even have "various definitions":
     [inst method:1 andString:"2"];
     [inst method:1];
 
-Now, that's what I call code readability. But oj itself lacks a preprocessor, so I put preproc to the job. Now, maybe you built your own little foundation of most-used classes and such. Here are two ways to use connect-oj:
+Now, that's what I call code readability. But oj itself lacks a preprocessor, so I put a tiny one to the job. Now, maybe you built your own little foundation of most-used classes and such. Here are two ways to use connect-oj:
 
 ### myfile.oj:
 ```objective-c
-//= include "MyFoundation/file.oj"
+#include("MyFoundation/file.oj");
 @implementation somethingCool: MyBase
 +(id)initializeWith:(MyObj)obj {...}
 -(BOOL)doSomeWork {
@@ -44,7 +44,7 @@ var myModule = {
 }
 ```
 
-In the above example, we created a - rather minimalistic - file, that included a "foundation" file and then used it. But, what if you only wanted readable code  for internal stuff, and export simpelr stuff to the user - or other scripts already in a site?
+In the above example, we created a - rather minimalistic - file, that included a "foundation" file and then used it. But, what if you only wanted readable code  for internal stuff, and export simpler stuff to the user - or other scripts already in a site?
 
 ### otherFile.oj
 ```objective-c
@@ -64,7 +64,7 @@ function myExport(arg) {
 }
 ```
 
-When you request a .oj file, it will be preprocessed and saved as .js - then served. But how can you avoid multiple rewrites - per request? create a .d file with the same name as an .oj file - or one that might be requested. The .d file is a JSON object:
+When you request a .oj file, it will be preprocessed and saved as .js - then served. You can also create a .d file with the same name as an .oj file - or one that might be requested. The .d file is a JSON object:
 
 ```json
 {
@@ -91,6 +91,25 @@ Now, the following scheme might happen:
 
 The .d is taken from compiling native code, and means "dependencies".
 
+## Using the preprocessor
+You may have a set of include-able files. You can bind them in using the pre-processor. Here is how that could look like:
+
+```objective-c
+#include("Helpers.oj");
+#include("Defs.oj");
+
+#if(needsBase) {
+@implementation MyObject : base
+#} else {
+@implementation MyObject
+#}
++(BOOL)amICool { return false; }
+@end
+```
+
+The preprocessor is actually JavaScript. See `pp.js` to see this mini preprocessor. It basically just uses the integrated `vm` module to run a preprocessor.
+This trick makes things very easy, and the preprocessor may also learn new tricks such as include paths and such in the future.
+
 ## How to use
 ```javascript
 var coj = require("connect-oj");
@@ -105,7 +124,9 @@ var options = {
     oj: {
         // oj options go here
     },
-    alwaysSaveOutput: true,
+    alwaysSaveOutput: true, // Do we want to save processed scripts?
     usePreprocessor: true // If disabled, you may get a speed-gain.
 };
 ```
+
+To see `oj` options, head to [the offical OJ repo](https://github.com/musictheory/oj/tree/1.0).

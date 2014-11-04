@@ -68,7 +68,7 @@ When you request a .oj file, it will be preprocessed and saved as .js - then ser
 
 ```json
 {
-    "input": ["myfile.oj", "myotherfile.oj"]
+    "files": ["myfile.oj", "myotherfile.oj"]
 }
 ```
 
@@ -94,7 +94,6 @@ The .d is taken from compiling native code, and means "dependencies".
 ## How to use
 ```javascript
 var coj = require("connect-oj");
-var app = connect();
 app.use(coj({...options...}));
 ```
 
@@ -105,9 +104,6 @@ The options object can be a bit cumbersome, since oj and preproc both can receiv
 var options = {
     oj: {
         // oj options go here
-    },
-    preproc: {
-        // preproc options here
     },
     alwaysSaveOutput: true,
     usePreprocessor: true // If disabled, you may get a speed-gain.

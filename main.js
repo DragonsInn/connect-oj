@@ -7,7 +7,10 @@ var pp = require("./pp"),
     qs = require("querystring");
 module.exports = function ConnectOJ(options) {
     var defaultOption = {
-        oj: {},
+        oj: {
+            "inline-const": true,
+            "inline-enum": true
+        },
         alwaysSaveOutput: true,
         usePreprocessor: true,
         dir: "./"
@@ -16,11 +19,6 @@ module.exports = function ConnectOJ(options) {
     options = util._extend(defaultOption, options);
 
     return function(req, res, next) {
-        function oj_cb(err, result) {
-            res.setHeader("Content-type", "text/javascript");
-            res.end(result);
-        }
-
         var _u = url.parse(req.url);
         var _q = qs.parse(_u.query);
         if(typeof _q.runtime != "undefined") {
@@ -45,23 +43,47 @@ module.exports = function ConnectOJ(options) {
             var JSname = path.join(dir, bname+".js");
             var Dname = path.join(dir, bname+".d");
 
+            if(fs.existsSync(OJname)) {
+                var ojStats = fs.statSync(OJname);
+            } else {
+                var ojStats = null;
+            }
+            if(fs.existsSync(JSname)) {
+                var jsStats = fs.statSync(JSname);
+            } else {
+                var jsStats = null;
+            }
+            if(fs.existsSync(Dname)) {
+                var dStats = fs.statSync(Dname);
+            } else {
+                var dStats = null;
+            }
+
+            // Callbacks
+            function saveOutput(output) {
+                function doWrite() {
+                    fs.writeFileSync(JSname, output);
+                }
+                var write=false;
+                if(!options.alwaysSaveOutput) return;
+                if(!fs.existsSync(JSname)) return doWrite();
+                if((ojStats!=null && jsStats!=null) && jsStats.mtime < ojStats.mtime) return doWrite();
+                if((dStats!=null && jsStats!=null) && jsStats.mtime < dStats.mtime) return doWrite();
+            }
+            function oj_cb(err, result) {
+                res.setHeader("Content-type", "text/javascript");
+                res.end(result.code);
+                saveOutput(result.code);
+            }
+
             console.log("-- Looking for:", [OJname, JSname, Dname]);
 
             if(fs.existsSync(OJname)) {
                 var output;
-                var ojStats = fs.statSync(OJname);
-                if(fs.existsSync(JSname)) {
-                    var jsStats = fs.statSync(JSname);
-                } else {
-                    var jsStats = null;
-                }
-                /*if(jsStats.mtime < ojStats.mtime) {
-                    fs.writeFileSync(JSname, output);
-                }*/
-
                 if(
                     jsStats == null
                     || (jsStats != null && jsStats.mtime < ojStats.mtime)
+                    || options.alwaysSaveOutput == false
                 ) {
                     if(options.usePreprocessor) {
                         // We gonna preprocess it
@@ -72,20 +94,24 @@ module.exports = function ConnectOJ(options) {
                         output = fs.readFileSync(OJname);
                     }
                     // Process it with OJ now...
-                    /*ojc(options.oj, function(error, result){
-
-                    });*/
-                    if(options.alwaysSaveOutput) {
-                        fs.writeFileSync(JSname, output);
-                    }
+                    options.oj.files = [{path:OJname, contents:output}];
+                    oj.compile(options.oj, oj_cb);
                 } else {
                     console.log("-- Reading existing...");
                     output = fs.readFileSync(JSname);
+                    oj_cb(0, {code:output});
                 }
-                oj_cb(0, output);
             } else if(fs.existsSync(Dname)) {
                 var deps = JSON.parse( fs.readFileSync(Dname).toString() );
                 // combine all deps.files[], preprocess and parse them into a nice JS file.
+                options.oj.files = [];
+                for(var fk in deps.files) {
+                    options.oj.files.push({
+                        path: path.join(dir, deps.files[fk]),
+                        contents: pp( path.join(dir, deps.files[fk]) )
+                    });
+                }
+                oj.compile(options.oj, oj_cb);
             }
         } else return next();
     }

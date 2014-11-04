@@ -35,7 +35,7 @@ module.exports = function Preprocessor(fileName) {
     		code : code,
     		require : require,
     		include : function( filename ) {
-    			code.push( Preprocessor( filename ) );
+    			code.push( Preprocessor( path.join(path.dirname(fileName), filename) ) );
     		}
     	}
     ).join('\n');

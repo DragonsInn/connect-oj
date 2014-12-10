@@ -37,7 +37,7 @@ module.exports = function ConnectOJ(options) {
         var dir = path.join(options.dir, path.dirname( req.url ));
 
         // Allow both methods. .oj during development and .js during production.
-        if(path.extname(file)==".js" || path.extname(file)==".oj") {
+        if(path.extname(file)==".js" || path.extname(file)==".oj" || path.extname(file)==".d") {
             var bname = path.basename(file, path.extname(file));
             var OJname = path.join(dir, bname+".oj");
             var JSname = path.join(dir, bname+".js");
@@ -64,7 +64,6 @@ module.exports = function ConnectOJ(options) {
                 function doWrite() {
                     fs.writeFileSync(JSname, output);
                 }
-                var write=false;
                 if(!options.alwaysSaveOutput) return;
                 if(!fs.existsSync(JSname)) return doWrite();
                 if((ojStats!=null && jsStats!=null) && jsStats.mtime < ojStats.mtime) return doWrite();

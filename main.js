@@ -72,7 +72,9 @@ module.exports = function ConnectOJ(options) {
             // Callbacks
             function saveOutput(output) {
                 function doWrite() {
-                    fs.writeFileSync(JSname, output);
+                    fs.writeFile(JSname, output, function(err, result) {
+                        if(err) console.error(err);
+                    });
                 }
                 if(!options.alwaysSaveOutput) return;
                 if(!fs.existsSync(JSname)) return doWrite();
@@ -87,41 +89,57 @@ module.exports = function ConnectOJ(options) {
 
             console.log("-- Looking for:", [OJname, JSname, Dname]);
 
-            if(fs.existsSync(OJname)) {
-                var output;
-                if(
-                    jsStats == null
-                    || (jsStats != null && jsStats.mtime < ojStats.mtime)
-                    || options.alwaysSaveOutput == false
-                ) {
-                    if(options.usePreprocessor) {
-                        // We gonna preprocess it
-                        console.log("-- Preprocessing...");
-                        output = pp(OJname);
+            fs.exists(OJname, function(exists){
+                console.log("-- ...",OJname);
+                if(exists) {
+                    var output;
+                    if(
+                        jsStats == null
+                        || (jsStats != null && jsStats.mtime < ojStats.mtime)
+                        || options.alwaysSaveOutput == false
+                    ) {
+                        if(options.usePreprocessor) {
+                            // We gonna preprocess it
+                            console.log("-- Preprocessing...");
+                            output = pp(OJname);
+                        } else {
+                            console.log("-- Just reading...");
+                            output = fs.readFileSync(OJname);
+                        }
+                        // Process it with OJ now...
+                        options.oj.files = [{path:OJname, contents:output}];
+                        oj.compile(options.oj, oj_cb);
                     } else {
-                        console.log("-- Just reading...");
-                        output = fs.readFileSync(OJname);
+                        console.log("-- Reading existing...");
+                        fs.readFile(JSname, function(err, data){
+                            if(err) {
+                                console.error(err);
+                            } else {
+                                oj_cb(0, {code:data});
+                            }
+                        });
                     }
-                    // Process it with OJ now...
-                    options.oj.files = [{path:OJname, contents:output}];
-                    oj.compile(options.oj, oj_cb);
                 } else {
-                    console.log("-- Reading existing...");
-                    output = fs.readFileSync(JSname);
-                    oj_cb(0, {code:output});
-                }
-            } else if(fs.existsSync(Dname)) {
-                var deps = JSON.parse( fs.readFileSync(Dname).toString() );
-                // combine all deps.files[], preprocess and parse them into a nice JS file.
-                options.oj.files = [];
-                for(var fk in deps.files) {
-                    options.oj.files.push({
-                        path: path.join(dir, deps.files[fk]),
-                        contents: pp( path.join(dir, deps.files[fk]) )
+                    fs.exists(Dname, function(exists){
+                        console.log("-- ...",Dname);
+                        if(exists) {
+                            var deps = JSON.parse( fs.readFileSync(Dname).toString() );
+                            // combine all deps.files[], preprocess and parse them into a nice JS file.
+                            options.oj.files = [];
+                            for(var fk in deps.files) {
+                                options.oj.files.push({
+                                    path: path.join(dir, deps.files[fk]),
+                                    contents: pp( path.join(dir, deps.files[fk]) )
+                                });
+                            }
+                            oj.compile(options.oj, oj_cb);
+                        } else {
+                            res.setHeader("Content-type","text/plain");
+                            res.end("// Not found!");
+                        }
                     });
                 }
-                oj.compile(options.oj, oj_cb);
-            }
+            });
         } else return next();
     }
 }

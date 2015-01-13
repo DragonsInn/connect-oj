@@ -26,8 +26,18 @@ module.exports = function ConnectOJ(options) {
             var ojm = require.resolve("ojc");
             var ojr = path.join(path.dirname(ojm), "runtime.js");
             console.log("-- Serving runtime:", ojr);
-            res.setHeader("Content-type", "text/javascript");
-            res.end(fs.readFileSync(ojr).toString());
+            res.setHeader("Content-type","text/javascript");
+            fs.readFile(ojr, function(err, content){
+                if(err) {
+                    res.write("/* ERROR\n");
+                    res.write(err);
+                    res.write("*/");
+                    res.end();
+                    console.log(err);
+                } else {
+                    res.end(content);
+                }
+            });
             return; // End it here.
         }
 
@@ -70,7 +80,7 @@ module.exports = function ConnectOJ(options) {
                 if((dStats!=null && jsStats!=null) && jsStats.mtime < dStats.mtime) return doWrite();
             }
             function oj_cb(err, result) {
-                res.setHeader("Content-type", "text/javascript");
+                res.setHeader("Content-type","text/javascript");
                 res.end(result.code);
                 saveOutput(result.code);
             }
